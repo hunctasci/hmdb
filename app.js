@@ -22,7 +22,7 @@ navbar.innerHTML = `
             </div>
             </div>
             <a id='actor-list' class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Actor List</a>
-            <a href="/about.html" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">About</a>
+            <a id="about" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">About</a>
             </div>
             <div class="flex items-center">
       <input id="search-input" type="text" class="rounded-md px-3 py-2" placeholder="Search...">
@@ -316,11 +316,13 @@ const renderPopularMovies = async () => {
       });
 
       movieCardContainer.append(movieCard);
-
       container.append(movieCardContainer);
 
       // add event listener to the movie card
     });
+    // const homePageTitle = document.createElement("h1");
+    // homePageTitle.textContent = "Popular Movies";
+    // container.prepend(homePageTitle);
   } catch {
     (error) => console.error(error);
   }
@@ -335,7 +337,7 @@ const handleMovieClick = async (movieId) => {
       `https://api.themoviedb.org/3/movie/${movieId}?api_key=${API_KEY}`
     );
     const movie = await response.json();
-    console.log(movie);
+    // console.log(movie);
 
     // Display the movie information
     const movieCardContainer = document.createElement("div");
@@ -378,7 +380,7 @@ const handleMovieClick = async (movieId) => {
       `https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${API_KEY}`
     );
     const castData = await castResponse.json();
-    console.log(castData);
+    // console.log(castData);
 
     // Display the actors
     const actorsContainer = document.createElement("div");
@@ -386,7 +388,7 @@ const handleMovieClick = async (movieId) => {
     actorsTitle.textContent = "Actors";
     actorsContainer.appendChild(actorsTitle);
 
-    castData.cast.forEach((actor) => {
+    castData.cast.slice(0, 8).forEach((actor) => {
       const actorCard = document.createElement("div");
       const actorName = document.createElement("p");
       const actorImage = document.createElement("img");
@@ -418,31 +420,92 @@ const handleActorClick = async (actorId) => {
   container.innerHTML = "";
 
   try {
-    const response = await fetch(
+    // Fetch the actor details using the actorId
+    const actorResponse = await fetch(
       `https://api.themoviedb.org/3/person/${actorId}?api_key=${API_KEY}`
     );
-    const actor = await response.json();
-    console.log(actor);
+    const actor = await actorResponse.json();
 
-    const actorCard = document.createElement("div");
-    const actorName = document.createElement("h3");
-    const actorImage = document.createElement("img");
-    const actorBiography = document.createElement("p");
+    // Fetch the movies the actor took part in
+    const moviesResponse = await fetch(
+      `https://api.themoviedb.org/3/person/${actorId}/movie_credits?api_key=${API_KEY}`
+    );
+    const moviesData = await moviesResponse.json();
+    const movies = moviesData.cast;
 
-    actorCard.className =
-      "flex flex-col bg-white shadow-lg rounded-lg items-center overflow-hidden";
-    actorName.className = "text-gray-700 text-base mt-2";
-    actorImage.className = "w-20 h-20 rounded-full";
-    actorBiography.className = "text-gray-700 text-base mt-2";
+    // Create the container for the actor details
+    const actorContainer = document.createElement("div");
+    actorContainer.className = "flex items-center p-3";
 
+    // Create the actor image element
+    const actorImg = document.createElement("img");
+    actorImg.className = "w-48";
+    actorImg.src = `https://image.tmdb.org/t/p/w500/${actor.profile_path}`;
+
+    // Create the container for the actor information
+    const actorInfoContainer = document.createElement("div");
+    actorInfoContainer.className = "ml-4";
+
+    // Create elements for the actor information
+    const actorName = document.createElement("h2");
+    actorName.className = "text-xl font-bold";
     actorName.textContent = actor.name;
-    actorImage.src = `https://image.tmdb.org/t/p/w500/${actor.profile_path}`;
-    actorBiography.textContent = actor.biography;
 
-    actorCard.append(actorImage, actorName, actorBiography);
-    container.append(actorCard);
+    const actorBio = document.createElement("p");
+    actorBio.className = "text-gray-700 text-base";
+    actorBio.textContent = actor.biography;
+
+    const actorBirthday = document.createElement("p");
+    actorBirthday.className = "text-gray-500 text-sm";
+    actorBirthday.textContent = `Birthday: ${actor.birthday}`;
+
+    const actorPlaceOfBirth = document.createElement("p");
+    actorPlaceOfBirth.className = "text-gray-500 text-sm";
+    actorPlaceOfBirth.textContent = `Place of Birth: ${actor.place_of_birth}`;
+
+    // Append the actor information elements to the actor info container
+    actorInfoContainer.append(
+      actorName,
+      actorBio,
+      actorBirthday,
+      actorPlaceOfBirth
+    );
+
+    // Append the actor image and info container to the main actor container
+    actorContainer.append(actorImg, actorInfoContainer);
+
+    // Create a container for the movies
+    const moviesContainer = document.createElement("div");
+    moviesContainer.className = "mt-4";
+
+    // Create a heading for the movies section
+    const moviesHeading = document.createElement("h3");
+    moviesHeading.className = "text-lg font-bold";
+    moviesHeading.textContent = "Movies";
+
+    // Create a container for the movie list
+    const movieList = document.createElement("ul");
+    movieList.className = "list-disc ml-8";
+
+    console.log(movies);
+
+    // Create list items for each movie
+    for (const movie of movies) {
+      const movieItem = document.createElement("li");
+      movieItem.textContent = movie.title;
+      movieList.appendChild(movieItem);
+      movieItem.addEventListener("click", () => {
+        handleMovieClick(movie.id);
+      });
+    }
+
+    // Append the movies heading and movie list to the movies container
+    moviesContainer.append(moviesHeading, movieList);
+
+    // Append the actor container and movies container to the main container
+    container.append(actorContainer, moviesContainer);
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching actor details:", error);
   }
 };
 
